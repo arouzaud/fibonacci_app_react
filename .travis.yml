@@ -1,0 +1,31 @@
+sudo: required # tells Travis we need super-user level permission in order to run Docker builds correctly
+services:
+  - docker # Travis will automatically install a Docker copy into our running container
+
+before_install: # a series of instruction to run before we run our project
+  - docker build -t arouzaud/react-test -f ./client/Dockerfile.dev ./client
+  #building a test version of our project and then run some tests inside of it, defined in client/src/App.test.js
+  #for that we use an image built out of the Dockerfile.dev file in client folder. ./client is the build context here
+
+script: #contains all commands supposed to be executed so the test will be executed.
+  # Travis CI will watch the output of each of these commands, to see if the test succeeds or fails
+  - docker run -e CI=true arouzaud/react-tesr npm run test # the -e CI=true is here so the npm run test runs and then exits of the watch mode, default mode for npm run test
+#this will output 0 or not 0 if the test fails
+
+after_success: # go to each of these sub folders and build an image using the prod Dockerfile
+  - docker build -t arouzaud/multi_client ./client # this is a multi-container project that
+  - docker build -t arouzaud/multi_nginx ./nginx
+  - docker build -t arouzaud/multi_server ./server
+  - docker build -t arouzaud/multi_worker ./worker
+
+deploy: #tells Travis how to deploy to AWS
+  provider: elasticbeanstalk # Travis CI comes pre-configured to deploy our app to a set of application providers like EBS
+  region: "eu-west-3"
+  app: "docker-react"
+  env: "Docker-env"
+  bucket_name: "elasticbeanstalk-eu-west-3-975128703222" # when Travis deploys the codebase, takes all the files, zip them all in 1 file and copy to a S3 bucket (basically a hard drive on AWS)
+  bucket_path: "docker-react"
+  on:
+    branch: master
+  access_key_id: $AWS_ACCESS_KEY
+  secret_access_key: $AWS_SECRET_KEY
