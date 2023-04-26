@@ -9,23 +9,18 @@ before_install: # a series of instruction to run before we run our project
 
 script: #contains all commands supposed to be executed so the test will be executed.
   # Travis CI will watch the output of each of these commands, to see if the test succeeds or fails
-  - docker run -e CI=true arouzaud/react-tesr npm run test # the -e CI=true is here so the npm run test runs and then exits of the watch mode, default mode for npm run test
+  - docker run -e CI=true arouzaud/react-test npm run test # the -e CI=true is here so the npm run test runs and then exits of the watch mode, default mode for npm run test
 #this will output 0 or not 0 if the test fails
 
 after_success: # go to each of these sub folders and build an image using the prod Dockerfile
-  - docker build -t arouzaud/multi_client ./client # this is a multi-container project that
-  - docker build -t arouzaud/multi_nginx ./nginx
-  - docker build -t arouzaud/multi_server ./server
-  - docker build -t arouzaud/multi_worker ./worker
-
-deploy: #tells Travis how to deploy to AWS
-  provider: elasticbeanstalk # Travis CI comes pre-configured to deploy our app to a set of application providers like EBS
-  region: "eu-west-3"
-  app: "docker-react"
-  env: "Docker-env"
-  bucket_name: "elasticbeanstalk-eu-west-3-975128703222" # when Travis deploys the codebase, takes all the files, zip them all in 1 file and copy to a S3 bucket (basically a hard drive on AWS)
-  bucket_path: "docker-react"
-  on:
-    branch: master
-  access_key_id: $AWS_ACCESS_KEY
-  secret_access_key: $AWS_SECRET_KEY
+  - docker build -t arouzaud/multi-client ./client # this is a multi-container project that
+  - docker build -t arouzaud/multi-nginx ./nginx
+  - docker build -t arouzaud/multi-server ./server
+  - docker build -t arouzaud/multi-worker ./worker
+  #we first need to log in to docker CLI with docker login, inside Travis CI
+  - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_ID" --password-stdin #the echo part will emit the output over standard in as input to the next command
+  #take those images and push them to docker Hub
+  - docker push arouzaud/multi-client
+  - docker push arouzaud/multi-nginx
+  - docker push arouzaud/multi-server
+  - docker push arouzaud/multi-worker
