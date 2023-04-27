@@ -3,24 +3,26 @@ services:
   - docker # Travis will automatically install a Docker copy into our running container
 
 before_install: # a series of instruction to run before we run our project
-  - docker build -t arouzaud/react-test -f ./client/Dockerfile.dev ./client
+  - docker build -t antoiner95/react-test -f ./client/Dockerfile.dev ./client
   #building a test version of our project and then run some tests inside of it, defined in client/src/App.test.js
   #for that we use an image built out of the Dockerfile.dev file in client folder. ./client is the build context here
 
 script: #contains all commands supposed to be executed so the test will be executed.
   # Travis CI will watch the output of each of these commands, to see if the test succeeds or fails
-  - docker run -e CI=true arouzaud/react-test npm run test # the -e CI=true is here so the npm run test runs and then exits of the watch mode, default mode for npm run test
+  - docker run -e CI=true antoiner95/react-test npm run test # the -e CI=true is here so the npm run test runs and then exits of the watch mode, default mode for npm run test
 #this will output 0 or not 0 if the test fails
 
 after_success: # go to each of these sub folders and build an image using the prod Dockerfile
-  - docker build -t arouzaud/multi-client ./client # this is a multi-container project that
-  - docker build -t arouzaud/multi-nginx ./nginx
-  - docker build -t arouzaud/multi-server ./server
-  - docker build -t arouzaud/multi-worker ./worker
+  - docker build -t /multi-client ./client # this is a multi-container project that
+  - docker build -t antoiner95/multi-nginx ./nginx
+  - docker build -t antoiner95/multi-server ./server
+  - docker build -t antoiner95/multi-worker ./worker
   #we first need to log in to docker CLI with docker login, inside Travis CI
+  - echo $DOCKER_ID
+  - echo $DOCKER_PASSWORD
   - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_ID" --password-stdin #the echo part will emit the output over standard in as input to the next command
   #take those images and push them to docker Hub
-  - docker push arouzaud/multi-client
-  - docker push arouzaud/multi-nginx
-  - docker push arouzaud/multi-server
-  - docker push arouzaud/multi-worker
+  - docker push antoiner95/multi-client
+  - docker push antoiner95/multi-nginx
+  - docker push antoiner95/multi-server
+  - docker push antoiner95/multi-worker
