@@ -13,7 +13,7 @@ script: #contains all commands supposed to be executed so the test will be execu
 #this will output 0 or not 0 if the test fails
 
 after_success: # go to each of these sub folders and build an image using the prod Dockerfile
-  - docker build -t /multi-client ./client # this is a multi-container project that
+  - docker build -t antoiner95/multi-client ./client # this is a multi-container project that
   - docker build -t antoiner95/multi-nginx ./nginx
   - docker build -t antoiner95/multi-server ./server
   - docker build -t antoiner95/multi-worker ./worker
