@@ -1,0 +1,57 @@
+version: '3'
+
+services:
+  postgres:
+    # start up a PostgreSQL server in the machine
+    image: "postgres:latest"
+    environment:
+      - POSTGRES_PASSWORD=postgres_password
+  redis:
+    image: "redis:latest"
+
+  nginx:
+    depends_on:
+      - api
+      - client
+    restart: always #we always want to make sure Nginx is up and running
+    build:
+      dockerfile: Dockerfile.dev
+      context: ./nginx
+    ports:
+      - '3050:80' #the first port is the port we use on localhost on our local machine, so we need to go to localhost:3050
+  api:
+    build:
+      # we use build when we have a custom version of a docker image to use; otherwise we juste use image: <imagename>
+      dockerfile: Dockerfile.dev
+      context: ./server
+    volumes:
+      - /app/node_modules #do not try to redirect this folder in the container
+      - ./server:/app #anytime our app tries to access things in /app in the container, it will be redirected to /server folder inside our project, except for node_modules
+    environment:
+      - REDIS_HOST=redis # defined by the name of the service above that was created for hosting the redis server
+      - REDIS_PORT=6379 # default port for redis, see the documentation
+      - PGUSER=postgres
+      - PGHOST=postgres
+      - PGDATABASE=postgres
+      - PGPASSWORD=postgres_password
+      - PGPORT=5432
+  client:
+    environment:
+      - WDS_SOCKET_PORT=0
+    # the React App service, i.e the front end service
+    build:
+      dockerfile: Dockerfile.dev
+      context: ./client
+    volumes:
+      - /app/node_modules # bookmark hold on this node_modules, do not override that
+      - ./client:/app
+  worker:
+    build:
+      dockerfile: Dockerfile.dev
+      context: ./worker
+    volumes:
+      - /app/node_modules
+      - ./worker:/app
+    environment:
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
